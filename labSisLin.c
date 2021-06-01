@@ -10,6 +10,7 @@ int main ()
     
     int i = 1;
 
+    // Le sistemas lineares ate encontrar EOF
     do {
         SistLinear_t *sistema;
         
@@ -33,6 +34,7 @@ int main ()
         norma = normaL2Residuo(sistema,result,res);
         printf("Norma L2 do residuo: %g\n",norma);
         printf("\n");
+        
         iter = gaussJacobi(sistema,result,&tempo);
         printf("Jacobi: %f ms --- Iteracoes -> %u\n",tempo,iter);
         printf("X: ");
@@ -40,16 +42,20 @@ int main ()
         norma = normaL2Residuo(sistema,result,res);
         printf("Norma L2 do residuo: %g\n",norma);
         printf("\n");
+        
         iter = gaussSeidel(sistema,result,&tempo);
         printf("Seidel: %f ms --- Iteracoes -> %u\n",tempo, iter);
         printf("X: ");
         prnVetor(result,sistema->n);
         norma = normaL2Residuo(sistema,result,res);
         printf("Norma L2 do residuo: %g\n",norma);
+        
         printf("\n");
         liberaSistLinear(sistema);
         free(result);
         free(res);
+        scanf("\n");
+        
         i++;
     } while (!feof(stdin));
     return 1;
