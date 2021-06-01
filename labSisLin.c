@@ -11,14 +11,12 @@ int main ()
     int i = 1;
 
     // Le sistemas lineares ate encontrar EOF
-    do {
+    while (!feof(stdin)) {
         SistLinear_t *sistema;
         
         sistema = lerSistLinear();
-        if (!sistema) {
-            perror("Falha ao alocar na memoria");
+        if (!sistema)
             return -1;
-        }
 
         real_t *result = malloc(sistema->n * sizeof(real_t));
         real_t *res = malloc(sistema->n * sizeof(real_t));
@@ -57,7 +55,7 @@ int main ()
         scanf("\n");
         
         i++;
-    } while (!feof(stdin));
+    }
     return 1;
 }
 

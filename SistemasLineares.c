@@ -318,6 +318,10 @@ SistLinear_t *lerSistLinear ()
 
     // Recebe n e aloca o sistema linear
     scanf("%u",&n);
+    if (!n) {
+        perror("Ordem da matriz invalida");
+        return NULL;
+    }
 
     SistLinear_t *sisLin = alocaSistLinear(n);
     if (!sisLin)
@@ -327,6 +331,11 @@ SistLinear_t *lerSistLinear ()
 
     // Recebe o erro
     scanf("%f",&erro);
+    if (!erro) {
+        perror("Erro invalido");
+        return NULL;
+    }
+    
     sisLin->erro = erro;
 
     // Le os termos do SL
