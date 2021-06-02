@@ -19,39 +19,50 @@ int main ()
             return -1;
 
         real_t *result = malloc(sistema->n * sizeof(real_t));
-        real_t *res = malloc(sistema->n * sizeof(real_t));
+        real_t *res;
         double tempo;
         real_t norma;
-        unsigned int iter;
+        int iter;
 
         printf("***** Sistema %u --> n = %u, erro: %g\n",i,sistema->n,sistema->erro);
-        eliminacaoGauss(sistema,result,&tempo);
-        printf("Eliminacao Gauss: %f ms\n",tempo);
-        printf("X: ");
-        prnVetor(result,sistema->n);
-        norma = normaL2Residuo(sistema,result,res);
-        printf("Norma L2 do residuo: %g\n",norma);
-        printf("\n");
+        if ((eliminacaoGauss(sistema,result,&tempo)) == 0) {
+            printf("Eliminacao Gauss: %f ms\n",tempo);
+            printf("X: ");
+            prnVetor(result,sistema->n);
+            norma = normaL2Residuo(sistema,result,res);
+            printf("Norma L2 do residuo: %g\n",norma);
+            printf("\n");
+        }
         
         iter = gaussJacobi(sistema,result,&tempo);
-        printf("Jacobi: %f ms --- Iteracoes -> %u\n",tempo,iter);
+
+        printf("Jacobi: %f ms --- Iteracoes -> %d\n",tempo,iter);
         printf("X: ");
         prnVetor(result,sistema->n);
         norma = normaL2Residuo(sistema,result,res);
         printf("Norma L2 do residuo: %g\n",norma);
+
+        if (norma > 5.0f) {
+            iter = refinamento(sistema,result,&tempo);
+            printf("\n");
+            printf("Refinamento: %f ms --- Iteracoes -> %d\n",tempo,iter);
+            printf("X: ");
+            prnVetor(result,sistema->n);
+            norma = normaL2Residuo(sistema,result,res);
+            printf("Norma L2 do residuo: %g\n",norma);
+        }
         printf("\n");
-        
+
         iter = gaussSeidel(sistema,result,&tempo);
-        printf("Seidel: %f ms --- Iteracoes -> %u\n",tempo, iter);
+        printf("Gauss-Seidel: %f ms --- Iteracoes -> %u\n",tempo, iter);
         printf("X: ");
         prnVetor(result,sistema->n);
         norma = normaL2Residuo(sistema,result,res);
         printf("Norma L2 do residuo: %g\n",norma);
-        
         printf("\n");
+        
         liberaSistLinear(sistema);
         free(result);
-        free(res);
         scanf("\n");
         
         i++;
