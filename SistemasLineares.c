@@ -123,7 +123,7 @@ int eliminacaoGauss (SistLinear_t *SL, real_t *x, double *tTotal)
 }
 
 // Funcao que recebe dois vetores de mesmo tamanho n
-// Retorna a maior differenca entre elementos com mesmo indice
+// Retorna a maior diferenca entre elementos com mesmo indice
 real_t maxDiff (real_t *a, real_t *b, unsigned int n) {
 
     double diff, max = 0.0f;
@@ -135,6 +135,25 @@ real_t maxDiff (real_t *a, real_t *b, unsigned int n) {
     }
 
     return max;
+}
+
+// Funcao que recebe um sistema linear
+// Retorna 1 se for diagonalmente dominante e 0 se nao
+
+int diagonalDominante(SistLinear_t *SL) {
+
+    real_t sum;
+    
+    for (int i=0; i<SL->n; i++) {
+        sum = 0.0f;
+        for (int j=0; j<SL->n; j++) {
+            if (i != j)
+                sum += SL->A[i][j];
+        }
+        if (sum > SL->A[i][i])
+            return 0;
+    }
+    return 1;
 }
 
 /*!
@@ -159,7 +178,7 @@ int gaussJacobi (SistLinear_t *SL, real_t *x, double *tTotal)
     for (int k=0; k<SL->n; k++)
         oldX[k] = 0.0f;
 
-    int i = 0;
+    int iter = 0;
     *tTotal = timestamp();
     
     do {
@@ -179,11 +198,18 @@ int gaussJacobi (SistLinear_t *SL, real_t *x, double *tTotal)
         for (int k=0; k<SL->n; k++)
             oldX[k] = x[k];
         
-        i++;
-    } while ((i < MAXIT) && (diff > SL->erro));
+        iter++;
+    } while ((iter < MAXIT) && (diff > SL->erro));
     
     *tTotal = timestamp() - *tTotal;
-    return i;
+    
+    if ((iter == 50) && (!diagonalDominante(SL)))
+        return -1; // Nao converge
+
+    for (int i=0; i<SL->n; i++)
+        if ((isinf(x[i])) || (isnan(x[i])))
+            return -2; // Sistema impossivel
+    return iter;
 }
 
 /*!
@@ -209,7 +235,7 @@ int gaussSeidel (SistLinear_t *SL, real_t *x, double *tTotal)
     for (int k=0; k<SL->n; k++)
         oldX[k] = 0.0f;
 
-    int i = 0;
+    int iter = 0;
     *tTotal = timestamp();
 
     do {
@@ -234,11 +260,18 @@ int gaussSeidel (SistLinear_t *SL, real_t *x, double *tTotal)
         for (int k=0; k<SL->n; k++)
             oldX[k] = x[k];
         
-        i++;
-    } while ((i < MAXIT) && (diff > SL->erro));
+        iter++;
+    } while ((iter < MAXIT) && (diff > SL->erro));
     
     *tTotal = timestamp() - *tTotal;
-    return i;
+    
+    if ((iter == 50) && (!diagonalDominante(SL)))
+        return -1; // Nao converge
+
+    for (int i=0; i<SL->n; i++)
+        if ((isinf(x[i])) || (isnan(x[i])))
+            return -2; // Sistema impossivel
+    return iter;
 }
 
 
@@ -257,11 +290,17 @@ int gaussSeidel (SistLinear_t *SL, real_t *x, double *tTotal)
 int refinamento (SistLinear_t *SL, real_t *x, double *tTotal)
 {
     SistLinear_t *copiaSL = copySL(SL);
+    if (!copiaSL) {
+        perror("Erro Refinamento: falha ao copiar sistema linear");
+        return 0;
+    }
     real_t res[SL->n], w[SL->n], xLinha[SL->n];
     real_t norma;
     double tempo;
     int iter=0;
     
+    *tTotal = timestamp();
+
     while ((iter < MAXIT) && (SL->erro < (norma = normaL2Residuo(SL,x,res)))) {
         for (int i=0; i<SL->n; i++) {
             xLinha[i] = x[i];
@@ -279,8 +318,15 @@ int refinamento (SistLinear_t *SL, real_t *x, double *tTotal)
         iter++;
     }
     
+    *tTotal = timestamp() - *tTotal;
     liberaSistLinear(copiaSL);
+    
+    if ((iter == 50) && (!diagonalDominante(SL)))
+        return -1; // Nao converge
 
+    for (int i=0; i<SL->n; i++)
+        if ((isinf(x[i])) || (isnan(x[i])))
+            return -2; // Sistema impossivel
     return iter;
 }
 

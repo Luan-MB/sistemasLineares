@@ -39,8 +39,12 @@ int main ()
         
         // Metodo de Jacobi
         iter = gaussJacobi(sistema,result,&tempo);
-
-        printf("Jacobi: %f ms --- Iteracoes -> %d\n",tempo,iter);
+        if (iter == -1)
+            printf("Jacobi: %f ms --- Nao converge\n",tempo);
+        else if (iter == -2)
+            printf("Jacobi: %f ms --- Sistema impossivel\n",tempo);
+        else
+            printf("Jacobi: %f ms --- Iteracoes -> %u\n",tempo, iter);
         printf("X: ");
         prnVetor(result,sistema->n);
         norma = normaL2Residuo(sistema,result,residuo);
@@ -49,7 +53,12 @@ int main ()
         if (norma > 5.0f) { // Refinamento
             iter = refinamento(sistema,result,&tempo);
             printf("\n");
-            printf("Refinamento: %f ms --- Iteracoes -> %u\n",tempo, iter);
+            if (iter == -1)
+                printf("Refinamento: %f ms --- Nao converge\n",tempo);
+            else if (iter == -2)
+                printf("Refinamento: %f ms --- Sistema impossivel\n",tempo);
+            else
+                printf("Refinamento: %f ms --- Iteracoes -> %u\n",tempo, iter);
             printf("X: ");
             prnVetor(result,sistema->n);
             norma = normaL2Residuo(sistema,result,residuo);
@@ -59,7 +68,12 @@ int main ()
 
         // Metodo de Gauss-Seidel
         iter = gaussSeidel(sistema,result,&tempo);
-        printf("Gauss-Seidel: %f ms --- Iteracoes -> %u\n",tempo, iter);
+        if (iter == -1)
+            printf("Gauss-Seidel: %f ms --- Nao converge\n",tempo);
+        else if (iter == -2)
+            printf("Gauss-Seidel: %f ms --- Sistema impossivel\n",tempo);
+        else
+            printf("Gauss-Seidel: %f ms --- Iteracoes -> %u\n",tempo, iter);
         printf("X: ");
         prnVetor(result,sistema->n);
         norma = normaL2Residuo(sistema,result,residuo);
@@ -68,7 +82,12 @@ int main ()
         if (norma > 5.0f) { // Refinamento
             iter = refinamento(sistema,result,&tempo);
             printf("\n");
-            printf("Refinamento: %f ms --- Iteracoes -> %u\n",tempo, iter);
+            if (iter == -1)
+                printf("Refinamento: %f ms --- Nao converge\n",tempo);
+            else if (iter == -2)
+                printf("refinamento: %f ms --- Sistema impossivel\n",tempo);
+            else
+                printf("Refinamento: %f ms --- Iteracoes -> %u\n",tempo, iter);
             printf("X: ");
             prnVetor(result,sistema->n);
             norma = normaL2Residuo(sistema,result,residuo);
