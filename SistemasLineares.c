@@ -1,3 +1,5 @@
+// Luan Machado Bernardt | GRR20190363
+
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
@@ -15,31 +17,18 @@
   \return Norma L2 do resíduo.
 */
 
-static real_t *vetorResiduo(SistLinear_t *SL, real_t *x) 
-{
-    real_t *residuo = malloc(SL->n * sizeof(real_t));
-    
-    for (int i=0; i<SL->n; i++) {
-        residuo[i] = 0.0;
-        for (int j=0; j<SL->n; j++)
-            residuo[i] += SL->A[i][j] * x[j]; 
-        residuo[i] = SL->b[i] - residuo[i];
-    }
-
-    return residuo;
-}
-
 real_t normaL2Residuo(SistLinear_t *SL, real_t *x, real_t *res)
 {
     real_t sum = 0.0f;
-
-    res = vetorResiduo(SL,x);
-
-    for (int i=0; i<SL->n; i++)
-        sum += res[i] * res[i];
     
-    free(res);
-    return sqrtf(sum);
+    for (int i=0; i<SL->n; i++) {
+        res[i] = 0.0f;
+        for (int j=0; j<SL->n; j++)
+            res[i] += SL->A[i][j] * x[j];
+        res[i] = SL->b[i] - res[i];
+        sum += powf(res[i],2.0f);
+    }
+    return (sqrtf(sum));
 }
 
 // Copia o sistema linear base
@@ -64,7 +53,7 @@ static unsigned int maxValue (SistLinear_t *SL, unsigned int i) {
 
     unsigned int max = i;
     
-    for (int j=i; j<SL->n; j++) {
+    for (int j=i+1; j<SL->n; j++) {
         if (fabs(SL->A[j][i]) > fabs(SL->A[max][i]))
           max = j;
     }
@@ -103,7 +92,6 @@ int eliminacaoGauss (SistLinear_t *SL, real_t *x, double *tTotal)
         return -1;
     }
     
-    real_t m;
     unsigned int pivo;
     *tTotal = timestamp();
     
@@ -114,7 +102,7 @@ int eliminacaoGauss (SistLinear_t *SL, real_t *x, double *tTotal)
             trocaLinha(copia,i,pivo);
         
         for (int j=i+1; j<SL->n; j++) {
-            m = copia->A[j][i] / copia->A[i][i];
+            double m = copia->A[j][i] / copia->A[i][i];
             copia->A[j][i] = 0.0f;
             for (int k=i+1; k<SL->n; k++)
                 copia->A[j][k] -= copia->A[i][k] * m;
@@ -138,7 +126,7 @@ int eliminacaoGauss (SistLinear_t *SL, real_t *x, double *tTotal)
 // Retorna a maior differenca entre elementos com mesmo indice
 real_t maxDiff (real_t *a, real_t *b, unsigned int n) {
 
-    real_t diff, max = 0.0f;
+    double diff, max = 0.0f;
 
     for (int i=0; i<n; i++) {
         diff = fabs(a[i] - b[i]);
@@ -147,24 +135,6 @@ real_t maxDiff (real_t *a, real_t *b, unsigned int n) {
     }
 
     return max;
-}
-
-int diagonalDominante (real_t **A, unsigned int n) {
-
-    real_t sum, aux;
-    
-    for (int i=0; i<n; i++) {
-        aux = fabs(A[i][i]);
-        sum = 0.0f;
-        for (int j=0; j<n; j++) {
-            if (i != j)
-                sum += fabs(A[i][j]);
-        }
-        
-        if ((sum / aux) > 1)
-            return 1;
-    }
-    return 1;
 }
 
 /*!
@@ -181,14 +151,10 @@ int diagonalDominante (real_t **A, unsigned int n) {
 */
 int gaussJacobi (SistLinear_t *SL, real_t *x, double *tTotal)
 {
-    if (!diagonalDominante(SL->A,SL->n))
-        return -1;
         
-    real_t sum, aux, diff;
-    real_t *oldX = malloc(SL->n * sizeof(real_t));
+    double sum, aux, diff;
+    real_t oldX[SL->n];
 
-    
-    
     // Preenche o vetor oldX de zeros
     for (int k=0; k<SL->n; k++)
         oldX[k] = 0.0f;
@@ -217,7 +183,6 @@ int gaussJacobi (SistLinear_t *SL, real_t *x, double *tTotal)
     } while ((i < MAXIT) && (diff > SL->erro));
     
     *tTotal = timestamp() - *tTotal;
-    free(oldX);
     return i;
 }
 
@@ -235,11 +200,9 @@ int gaussJacobi (SistLinear_t *SL, real_t *x, double *tTotal)
   */
 int gaussSeidel (SistLinear_t *SL, real_t *x, double *tTotal)
 {
-    if (!diagonalDominante(SL->A,SL->n))
-        return -1;
-    
-    real_t sum, aux, diff;
-    real_t *oldX = malloc(SL->n * sizeof(real_t));
+
+    double sum, aux, diff;
+    real_t oldX[SL->n];
 
 
     // Preenche o vetor oldX de zeros
@@ -275,7 +238,6 @@ int gaussSeidel (SistLinear_t *SL, real_t *x, double *tTotal)
     } while ((i < MAXIT) && (diff > SL->erro));
     
     *tTotal = timestamp() - *tTotal;
-    free(oldX);
     return i;
 }
 
@@ -294,36 +256,30 @@ int gaussSeidel (SistLinear_t *SL, real_t *x, double *tTotal)
   */
 int refinamento (SistLinear_t *SL, real_t *x, double *tTotal)
 {
-    SistLinear_t *copiaSL =  copySL(SL);
-
-    real_t *xLinha = malloc(SL->n * sizeof(real_t));
-
-    real_t *w = malloc(SL->n * sizeof(real_t));
-
-    real_t *residuo;
-    real_t diff;
+    SistLinear_t *copiaSL = copySL(SL);
+    real_t res[SL->n], w[SL->n], xLinha[SL->n];
+    real_t norma;
     double tempo;
-    int iter = 0;
-
-    do {
+    int iter=0;
+    
+    while ((iter < MAXIT) && (SL->erro < (norma = normaL2Residuo(SL,x,res)))) {
+        for (int i=0; i<SL->n; i++) {
+            xLinha[i] = x[i];
+            copiaSL->b[i] = res[i];
+        }
+       
+        eliminacaoGauss(copiaSL,w,&tempo);
         
         for (int i=0; i<SL->n; i++)
-            xLinha[i] = x[i];
+            x[i] += w[i];
 
-        residuo = vetorResiduo(copiaSL,xLinha);
+        if (SL-> erro > maxDiff(x,xLinha,SL->n))
+            break;
 
-        for (int i=0; i<SL->n; i++)
-            copiaSL->b[i] = residuo[i];
-
-        eliminacaoGauss(copiaSL,w,&tempo);
-
-        for (int i=0; i<SL->n; i++)
-            x[i] = xLinha[i] + w[i];
-
-        diff = maxDiff(xLinha,x,SL->n);
-
-        iter ++;
-    } while ((iter < 2) && (diff > SL->erro));
+        iter++;
+    }
+    
+    liberaSistLinear(copiaSL);
 
     return iter;
 }
